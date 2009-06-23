@@ -18,6 +18,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 add_executable(mimic AminoAcidDist.cpp  Option.cpp Peptides.cpp)
 target_link_libraries(mimic m)
+install(TARGETS mimic DESTINATION bin)
 
 
 #set_target_properties(mimic PROPERTIES COMPILE_FLAGS "${extraflag} ")
