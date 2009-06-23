@@ -1,0 +1,1 @@
+/usr/bin/c++      CMakeFiles/mimic.dir/AminoAcidDist.cpp.o CMakeFiles/mimic.dir/Option.cpp.o CMakeFiles/mimic.dir/Peptides.cpp.o  -o mimic -rdynamic -lm 
