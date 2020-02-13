@@ -23,7 +23,7 @@ class Peptides
     Peptides();
     virtual ~Peptides();
     void readFasta(string path);
-    void printAll();
+    void printAll(const std::string& suffix = "");
     void scramble(const Peptides& peps);
     inline void addPeptide(const string& peptide,unsigned int pepNo);
     void shuffle(const Peptides& normals);
@@ -39,10 +39,12 @@ class Peptides
     set<string> usedPeptides;
     string inFile;
     bool replaceI;
-    static const unsigned int lineLen=60;
-    static const unsigned int maxTries=1000;
-    static const unsigned int minLen=5;
-    static const string proteinNamePrefix;
+    static const unsigned int lineLen = 60;
+    static const unsigned int maxTries = 1000;
+    static unsigned int minLen;
+    static string proteinNamePrefix_;
+    static unsigned int multFactor_;
+    static double sharedPeptideRatio_;
     static AminoAcidDist background;
 };
 
