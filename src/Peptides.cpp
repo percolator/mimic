@@ -41,9 +41,9 @@ AminoAcidDist Peptides::background = AminoAcidDist();
 Peptides::Peptides() : replaceI(false) {}
 Peptides::~Peptides() {}
 
-void Peptides::printAll(const std::string& suffix) {
+void Peptides::printAll(const vector<string>& connectorStrings, const std::string& suffix) {
   unsigned int count = 0;
-  vector<string> outPep(between.size());
+  vector<string> outPep(connectorStrings.size());
   map<string,set<unsigned int> >::const_iterator it = pep2ixs.begin();
   for (; it != pep2ixs.end(); it++) {
     set<unsigned int>::const_iterator ixIt = it->second.begin();
@@ -53,10 +53,10 @@ void Peptides::printAll(const std::string& suffix) {
       count++;
     }
   }
-  assert(count == between.size());
+  assert(count == connectorStrings.size());
   ostringstream first("");
-  for (size_t ix = 0; ix < between.size(); ix++) {
-    if (between[ix][0]=='>') {
+  for (size_t ix = 0; ix < connectorStrings.size(); ix++) {
+    if (connectorStrings[ix][0] == '>') {
       string str = first.str();
       size_t p = 0;
       while (p < str.length()) {
@@ -64,9 +64,9 @@ void Peptides::printAll(const std::string& suffix) {
         p+=lineLen;
       }
       first.str("");
-      cout << between[ix] << suffix << endl;
+      cout << connectorStrings[ix] << suffix << endl;
     } else {
-      first << between[ix];
+      first << connectorStrings[ix];
     }
     first << outPep[ix];
   }
@@ -80,9 +80,9 @@ void Peptides::printAll(const std::string& suffix) {
 }
 
 void Peptides::addPeptide(const string& peptide, unsigned int pepNo) {
-  assert(pep2ixs[peptide].count(pepNo)==0);
+  assert(pep2ixs[peptide].count(pepNo) == 0);
   pep2ixs[peptide].insert(pepNo);
-  assert(pepNo+1 == between.size());
+  assert(pepNo+1 == connectorStrings_.size());
 }
 
 void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
@@ -92,17 +92,29 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
   }
   for (; pos<protLen; pos++) {
     if (pos == 0 || seq[pos] == 'K' || seq[pos] == 'R') {
-      addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
+      // store peptide without C-terminal 'K/R'
+      if (pos > lastPos) {
+        addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
+      }
+      
+      // store single/multiple consecutive 'K/R' to leave unchanged in 
+      // shuffled protein sequence
       int len = 1;
-      while (pos+len+1<protLen && (seq[pos+len-1]=='K' || seq[pos+len-1] == 'R')) {
+      while (pos+len+1 < protLen && (seq[pos+len-1] == 'K' || seq[pos+len-1] == 'R')) {
         len++;
       }
-      between.push_back(seq.substr(pos,len));
+      connectorStrings_.push_back(seq.substr(pos,len));
+      
+      // update position to jump over 'K/R' region
       lastPos = pos + len;
       pos += len - 1;
     }
   }
-  addPeptide(seq.substr(lastPos,pos-lastPos-1), pepNo++);
+  
+  // store protein C-terminal peptide
+  if (pos > lastPos) {
+    addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
+  }
 }
 
 
@@ -114,14 +126,15 @@ void Peptides::readFasta(string path) {
   while (getline(fastaIn, line)) {
     if (line[0] == '>') { // id line
       if (spillOver) {
-        assert(seq.size()>0);
+        assert(seq.size() > 0);
+        // add peptides and KR-stretches to connectorStrings_
         cleaveProtein(seq, pepNo);
         seq = "";
       }
       ostringstream newProteinName("");
       newProteinName << ">" << proteinNamePrefix_ << ++proteinNo;
-      between.push_back(newProteinName.str());
-      assert(between.size() == pepNo+1);
+      connectorStrings_.push_back(newProteinName.str());
+      assert(connectorStrings_.size() == pepNo+1);
     } else { // amino acid sequence
       seq += line;
       spillOver = true;
@@ -147,7 +160,7 @@ void Peptides::shuffle(const string& in,string& out) {
     }
   }
 }
-void Peptides::mutate(const string& in,string& out) {
+void Peptides::mutate(const string& in, string& out) {
   out=in;
   int i = in.length();
   int j=(int)((double)(i+1)*((double)rand()/((double)RAND_MAX+(double)1)));
@@ -155,7 +168,7 @@ void Peptides::mutate(const string& in,string& out) {
   out[j] = background.generateAA(d);
 }
 
-bool Peptides::recurringPeptide(const string& pep, bool force) {
+bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
   string checkPep=pep;
   if (replaceI) {
     for(string::iterator it=checkPep.begin();it!=checkPep.end();it++) {
@@ -169,22 +182,22 @@ bool Peptides::recurringPeptide(const string& pep, bool force) {
         *it='E';
     }
   }
-  bool used = usedPeptides.count(checkPep) > 0;
+  bool used = usedPeptides_.count(checkPep) > 0;
   if (force || !used)
-    usedPeptides.insert(checkPep);
+    usedPeptides_.insert(checkPep);
   return used;
 }
 
 
-void Peptides::shuffle(const Peptides& normals) {
-  between=normals.between;
-  pep2ixs.clear();
-  map<string,set<unsigned int> >::const_iterator it = normals.pep2ixs.begin();
-  for(; it != normals.pep2ixs.end(); it++) {
-    recurringPeptide(it->first,true);
+void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
+  map<string,set<unsigned int> >::const_iterator it = normalPep2ixs.begin();
+  bool force = true;
+  for(; it != normalPep2ixs.end(); it++) {
+    checkAndMarkUsedPeptide(it->first, force);
   }
-  it = normals.pep2ixs.begin();
-  for (; it != normals.pep2ixs.end(); it++) {
+  
+  it = normalPep2ixs.begin();
+  for (; it != normalPep2ixs.end(); it++) {
     double uniRand = ( (double)rand() / ((double)RAND_MAX+(double)1) );
     string scrambledPeptide = it->first;
     if (uniRand >= sharedPeptideRatio_) {
@@ -192,7 +205,7 @@ void Peptides::shuffle(const Peptides& normals) {
       bool peptideUsed;
       do {
         shuffle(it->first, scrambledPeptide);
-        peptideUsed = recurringPeptide(scrambledPeptide);
+        peptideUsed = checkAndMarkUsedPeptide(scrambledPeptide);
       } while ( peptideUsed && 
                (it->first).length() >= minLen &&  
                ++tries < maxTries);
@@ -204,11 +217,11 @@ void Peptides::shuffle(const Peptides& normals) {
         string mutatedPeptide;
         do {
           mutate(scrambledPeptide, mutatedPeptide);
-          peptideUsed = recurringPeptide(mutatedPeptide);
+          peptideUsed = checkAndMarkUsedPeptide(mutatedPeptide);
           scrambledPeptide = mutatedPeptide;
         } while ( peptideUsed && ++tries < maxTries);
       }
-      if (tries == maxTries) cerr << "Gave up on peptide " << it->first << endl;
+      //if (tries == maxTries) cerr << "Gave up on peptide " << it->first << endl;
     }
     pep2ixs[scrambledPeptide].insert(it->second.begin(),it->second.end());
   }
@@ -216,15 +229,20 @@ void Peptides::shuffle(const Peptides& normals) {
 
 int Peptides::run() {
   srand(time(0));
+  cerr << "Reading fasta file and in-silico digesting proteins" << endl;
   readFasta(inFile);
-  Peptides fake;
   for (unsigned int m = 0; m < multFactor_; ++m) {
-    fake.shuffle(*this);
+    Peptides entrapmentDB;
+    
+    cerr << "Shuffling round: " << (m+1) << endl;
+    entrapmentDB.shuffle(pep2ixs);
     
     ostringstream suffix("");
-    suffix << "_" << m;
+    if (multFactor_ > 1) {
+      suffix << "|shuffle_" << (m+1);
+    }
     
-    fake.printAll(suffix.str());
+    entrapmentDB.printAll(connectorStrings_, suffix.str());
   }
   return 0;
 }

@@ -22,21 +22,25 @@ class Peptides
   public:
     Peptides();
     virtual ~Peptides();
-    void readFasta(string path);
-    void printAll(const std::string& suffix = "");
-    void scramble(const Peptides& peps);
-    inline void addPeptide(const string& peptide,unsigned int pepNo);
-    void shuffle(const Peptides& normals);
-    void shuffle(const string& in,string& out);
-    void mutate(const string& in,string& out);
+    
     bool parseOptions(int argc, char **argv);
-    bool recurringPeptide(const string& pep, bool force=false);
     int run();
-    void cleaveProtein(string seq,unsigned int & pepNo);
+    
+    void readFasta(string path);
+    void printAll(const vector<string>& connectorStrings, 
+                  const std::string& suffix = "");
+    
+    void addPeptide(const string& peptide, unsigned int pepNo);
+    void shuffle(const map<string,set<unsigned int> >& normalPep2ixs);
+    void shuffle(const string& in, string& out);
+    void mutate(const string& in, string& out);
+    bool checkAndMarkUsedPeptide(const string& pep, bool force=false);
+    
+    void cleaveProtein(string seq, unsigned int & pepNo);
   protected:
     map<string,set<unsigned int> > pep2ixs;
-    vector<string> between;
-    set<string> usedPeptides;
+    vector<string> connectorStrings_;
+    set<string> usedPeptides_;
     string inFile;
     bool replaceI;
     static const unsigned int lineLen = 60;
