@@ -30,10 +30,13 @@ using namespace std;
 #include "Peptides.h"
 
 Peptides::Peptides() : minLen_(4u), replaceI_(false), seed_(1u), multFactor_(1u), 
-    sharedPeptideRatio_(0.0), proteinNamePrefix_("mimic|Random_"), background_() {}
+    sharedPeptideRatio_(0.0), inFile_(""), outFile_(""), 
+    proteinNamePrefix_("mimic|Random_"), prependOriginal_(false), 
+    background_() {}
 Peptides::~Peptides() {}
 
-void Peptides::printAll(const vector<string>& connectorStrings, const std::string& suffix) {
+void Peptides::printAll(const vector<string>& connectorStrings, 
+    const std::string& suffix, std::ostream& os) {
   unsigned int count = 0;
   vector<string> outPep(connectorStrings.size());
   map<string,set<unsigned int> >::const_iterator it = pep2ixs_.begin();
@@ -52,11 +55,11 @@ void Peptides::printAll(const vector<string>& connectorStrings, const std::strin
       string str = first.str();
       size_t p = 0;
       while (p < str.length()) {
-        cout << str.substr(p,lineLen) << endl;
+        os << str.substr(p,lineLen) << endl;
         p+=lineLen;
       }
       first.str("");
-      cout << connectorStrings[ix] << suffix << endl;
+      os << connectorStrings[ix] << suffix << endl;
     } else {
       first << connectorStrings[ix];
     }
@@ -65,7 +68,7 @@ void Peptides::printAll(const vector<string>& connectorStrings, const std::strin
   string str=first.str();
   size_t p=0;
   while(p<str.length()) {
-    cout << str.substr(p,lineLen) << endl;
+    os << str.substr(p,lineLen) << endl;
     p+=lineLen;
   }
   first.str("");
@@ -106,12 +109,14 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
 }
 
 
-void Peptides::readFasta(string path) {
+void Peptides::readFasta(string& path, bool write, std::ostream& os) {
   ifstream fastaIn(path.c_str(), ios::in);
   string line(""), pep(""), seq("");
   unsigned int pepNo = 0,proteinNo = 0;
   bool spillOver = false;
   while (getline(fastaIn, line)) {
+    if (write) os << line << std::endl;
+    
     if (line[0] == '>') { // id line
       if (spillOver) {
         assert(seq.size() > 0);
@@ -217,8 +222,15 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
 
 int Peptides::run() {
   srand(seed_);
+  
+  std::ofstream outFileStream;
+  if (outFile_.size() > 0) {
+    outFileStream.open(outFile_.c_str(), ios::out);
+  }
+  std::ostream &outStream = outFile_.size() > 0 ? outFileStream : std::cout;
+  
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
-  readFasta(inFile_);
+  readFasta(inFile_, prependOriginal_, outStream);
   for (unsigned int m = 0; m < multFactor_; ++m) {
     Peptides entrapmentDB;
     
@@ -230,7 +242,7 @@ int Peptides::run() {
       suffix << "|shuffle_" << (m+1);
     }
     
-    entrapmentDB.printAll(connectorStrings_, suffix.str());
+    entrapmentDB.printAll(connectorStrings_, suffix.str(), outStream);
   }
   return 0;
 }
@@ -241,6 +253,10 @@ bool Peptides::parseOptions(int argc, char **argv){
   intro << "   mimic <fasta-file>" << endl;
   CommandLineParser cmd(intro.str());
   
+  cmd.defineOption("o",
+      "out-file",
+      "File to write the mimicked protein sequences to (Default: prints to stdout)",
+      "string");
   cmd.defineOption("p",
       "prefix",
       "Prefix to mimic proteins (Default: \"mimic|Random_\")",
@@ -257,20 +273,31 @@ bool Peptides::parseOptions(int argc, char **argv){
       "seed",
       "Set seed of the random number generator. Default = 1",
       "int");
+  cmd.defineOption("P",
+      "prepend",
+      "Prepend the original fasta file to the output",
+      "",
+      TRUE_IF_SET);
   
   cmd.parseArgs(argc, argv);
   
-  if (cmd.optionSet("p")) {
-    Peptides::proteinNamePrefix_ = cmd.options["p"];
+  if (cmd.optionSet("o")) {
+    outFile_ = cmd.options["o"];
   }
   if (cmd.optionSet("m")) {
-    Peptides::multFactor_ = cmd.getInt("m", 1, 1000);
+    multFactor_ = cmd.getInt("m", 1, 1000);
   }
   if (cmd.optionSet("s")) {
-    Peptides::sharedPeptideRatio_ = cmd.getDouble("s", 0.0, 1.0);
+    sharedPeptideRatio_ = cmd.getDouble("s", 0.0, 1.0);
   }
   if (cmd.optionSet("S")) {
-    Peptides::seed_ = cmd.getInt("S", 1, 2147483647);
+    seed_ = cmd.getInt("S", 1, 2147483647);
+  }
+  if (cmd.optionSet("p")) {
+    proteinNamePrefix_ = cmd.options["p"];
+  }
+  if (cmd.optionSet("P")) {
+    prependOriginal_ = true;
   }
   
   if (cmd.arguments.size() > 0) {
@@ -284,13 +311,11 @@ bool Peptides::parseOptions(int argc, char **argv){
 
 
 int main(int argc, char **argv){
-  Peptides *pPeptides=new Peptides();
-  int retVal=-1;
-  if(pPeptides->parseOptions(argc,argv))
-  {
-    retVal=pPeptides->run();
+  Peptides pPeptides;
+  int retVal = -1;
+  if (pPeptides.parseOptions(argc, argv)) {
+    retVal = pPeptides.run();
   }
-  delete pPeptides;
   return retVal;
 }   
 

@@ -26,9 +26,10 @@ class Peptides
     bool parseOptions(int argc, char **argv);
     int run();
     
-    void readFasta(string path);
+    void readFasta(string& path, bool write, std::ostream& os);
     void printAll(const vector<string>& connectorStrings, 
-                  const std::string& suffix = "");
+                  const std::string& suffix,
+                  std::ostream& os);
     
     void addPeptide(const string& peptide, unsigned int pepNo);
     void shuffle(const map<string,set<unsigned int> >& normalPep2ixs);
@@ -45,7 +46,8 @@ class Peptides
     vector<string> connectorStrings_;
     set<string> usedPeptides_;
     
-    string inFile_;
+    // input arguments
+    string inFile_, outFile_;
     unsigned int seed_;
     bool replaceI_;
     // N.B.: the shortest shuffled peptide will be minLen_ + 1, as we conserve 
@@ -54,6 +56,7 @@ class Peptides
     string proteinNamePrefix_;
     unsigned int multFactor_;
     double sharedPeptideRatio_;
+    bool prependOriginal_;
     
     AminoAcidDist background_;
 };
