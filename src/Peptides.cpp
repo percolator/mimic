@@ -29,23 +29,15 @@ using namespace std;
 #include "Option.h"
 #include "Peptides.h"
 
-string Peptides::proteinNamePrefix_ = "mimic|Random_";
-// N.B.: the shortest shuffled peptide will be minLen + 2, as we conserve the 
-// first and last AA of each peptide
-unsigned int Peptides::minLen = 4;
-unsigned int Peptides::multFactor_ = 1;
-double Peptides::sharedPeptideRatio_ = 0.0;
-
-AminoAcidDist Peptides::background = AminoAcidDist();
-
-Peptides::Peptides() : replaceI(false) {}
+Peptides::Peptides() : minLen_(4u), replaceI_(false), seed_(1u), multFactor_(1u), 
+    sharedPeptideRatio_(0.0), proteinNamePrefix_("mimic|Random_"), background_() {}
 Peptides::~Peptides() {}
 
 void Peptides::printAll(const vector<string>& connectorStrings, const std::string& suffix) {
   unsigned int count = 0;
   vector<string> outPep(connectorStrings.size());
-  map<string,set<unsigned int> >::const_iterator it = pep2ixs.begin();
-  for (; it != pep2ixs.end(); it++) {
+  map<string,set<unsigned int> >::const_iterator it = pep2ixs_.begin();
+  for (; it != pep2ixs_.end(); it++) {
     set<unsigned int>::const_iterator ixIt = it->second.begin();
     for (; ixIt != it->second.end(); ixIt++) {  
       assert(outPep[*ixIt] == "");
@@ -80,8 +72,8 @@ void Peptides::printAll(const vector<string>& connectorStrings, const std::strin
 }
 
 void Peptides::addPeptide(const string& peptide, unsigned int pepNo) {
-  assert(pep2ixs[peptide].count(pepNo) == 0);
-  pep2ixs[peptide].insert(pepNo);
+  assert(pep2ixs_[peptide].count(pepNo) == 0);
+  pep2ixs_[peptide].insert(pepNo);
   assert(pepNo+1 == connectorStrings_.size());
 }
 
@@ -93,9 +85,7 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
   for (; pos<protLen; pos++) {
     if (pos == 0 || seq[pos] == 'K' || seq[pos] == 'R') {
       // store peptide without C-terminal 'K/R'
-      if (pos > lastPos) {
         addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
-      }
       
       // store single/multiple consecutive 'K/R' to leave unchanged in 
       // shuffled protein sequence
@@ -112,9 +102,7 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
   }
   
   // store protein C-terminal peptide
-  if (pos > lastPos) {
     addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
-  }
 }
 
 
@@ -165,12 +153,12 @@ void Peptides::mutate(const string& in, string& out) {
   int i = in.length();
   int j=(int)((double)(i+1)*((double)rand()/((double)RAND_MAX+(double)1)));
   double d=((double)rand()/((double)RAND_MAX+(double)1));
-  out[j] = background.generateAA(d);
+  out[j] = background_.generateAA(d);
 }
 
 bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
   string checkPep=pep;
-  if (replaceI) {
+  if (replaceI_) {
     for(string::iterator it=checkPep.begin();it!=checkPep.end();it++) {
       if (*it=='I')
         *it='L';
@@ -207,7 +195,7 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
         shuffle(it->first, scrambledPeptide);
         peptideUsed = checkAndMarkUsedPeptide(scrambledPeptide);
       } while ( peptideUsed && 
-               (it->first).length() >= minLen &&  
+               (it->first).length() >= minLen_ &&  
                ++tries < maxTries);
       
       // if scrambling does not give a usable peptide, mutate some AAs
@@ -223,19 +211,19 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
       }
       //if (tries == maxTries) cerr << "Gave up on peptide " << it->first << endl;
     }
-    pep2ixs[scrambledPeptide].insert(it->second.begin(),it->second.end());
+    pep2ixs_[scrambledPeptide].insert(it->second.begin(),it->second.end());
   }
 }
 
 int Peptides::run() {
-  srand(time(0));
+  srand(seed_);
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
-  readFasta(inFile);
+  readFasta(inFile_);
   for (unsigned int m = 0; m < multFactor_; ++m) {
     Peptides entrapmentDB;
     
     cerr << "Shuffling round: " << (m+1) << endl;
-    entrapmentDB.shuffle(pep2ixs);
+    entrapmentDB.shuffle(pep2ixs_);
     
     ostringstream suffix("");
     if (multFactor_ > 1) {
@@ -265,6 +253,10 @@ bool Peptides::parseOptions(int argc, char **argv){
       "shared-pept-ratio",
       "Ratio of shared peptides that will stay preserved in the mimic database (Default: 0.0)",
       "int");
+  cmd.defineOption("S",
+      "seed",
+      "Set seed of the random number generator. Default = 1",
+      "int");
   
   cmd.parseArgs(argc, argv);
   
@@ -277,9 +269,12 @@ bool Peptides::parseOptions(int argc, char **argv){
   if (cmd.optionSet("s")) {
     Peptides::sharedPeptideRatio_ = cmd.getDouble("s", 0.0, 1.0);
   }
+  if (cmd.optionSet("S")) {
+    Peptides::seed_ = cmd.getInt("S", 1, 2147483647);
+  }
   
   if (cmd.arguments.size() > 0) {
-    inFile = cmd.arguments[0];
+    inFile_ = cmd.arguments[0];
   } else {
     std::cerr << "No fasta file specified" << std::endl;
     return false;

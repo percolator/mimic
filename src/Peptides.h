@@ -38,18 +38,24 @@ class Peptides
     
     void cleaveProtein(string seq, unsigned int & pepNo);
   protected:
-    map<string,set<unsigned int> > pep2ixs;
-    vector<string> connectorStrings_;
-    set<string> usedPeptides_;
-    string inFile;
-    bool replaceI;
     static const unsigned int lineLen = 60;
     static const unsigned int maxTries = 1000;
-    static unsigned int minLen;
-    static string proteinNamePrefix_;
-    static unsigned int multFactor_;
-    static double sharedPeptideRatio_;
-    static AminoAcidDist background;
+    
+    map<string,set<unsigned int> > pep2ixs_;
+    vector<string> connectorStrings_;
+    set<string> usedPeptides_;
+    
+    string inFile_;
+    unsigned int seed_;
+    bool replaceI_;
+    // N.B.: the shortest shuffled peptide will be minLen_ + 1, as we conserve 
+    // the last AA of each peptide
+    unsigned int minLen_;
+    string proteinNamePrefix_;
+    unsigned int multFactor_;
+    double sharedPeptideRatio_;
+    
+    AminoAcidDist background_;
 };
 
 #endif /*PEPTIDES_H_*/
