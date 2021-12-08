@@ -20,3 +20,21 @@ $ cd src
 $ cmake -DCMAKE_INSTALL_PREFIX=/tmp/install . && make && make install
 ```
 
+# Run application
+```shell
+$ cd bin
+$ ./mimic <path_to_fasta_file>
+```
+#### options
+
+|Long flag         		|Short flag | description               												  			 |
+|-----------------------|-----------|----------------------------------------------------------------------------------------|
+|out-file          		|	 o      | File to write the mimicked protein sequences to (Default: prints to stdout) 			 |
+|prefix			   		|    p      | Prefix to mimic proteins (Default: "mimic|Random_") 									 |
+|mult-factor       		|    m      | sNumber of times the database should be multiplied (Default: 1) 						 |
+|shared-pept-ratio      |    s      | Ratio of shared peptides that will stay preserved in the mimic database (Default: 0.0) |
+|seed                   |    S      | Set seed of the random number generator. Default = 1									 |
+|prepend                |    P      | Prepend the original fasta file to the output											 |
+|help              		|    h      | produce help message      															 |
+
+
