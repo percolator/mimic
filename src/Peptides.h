@@ -26,7 +26,7 @@ using namespace std;
 class Peptides
 {
   public:
-    Peptides();
+    explicit Peptides(unsigned int minLen, set<string> usedPeptides, unsigned int maxTries = 1000, bool replaceI=false);
     virtual ~Peptides();
     
     bool parseOptions(int argc, char **argv);
@@ -46,7 +46,7 @@ class Peptides
     void cleaveProtein(string seq, unsigned int & pepNo);
   protected:
     static const unsigned int lineLen = 60;
-    static const unsigned int maxTries = 1000;
+    unsigned int maxTries;
     
     map<string,set<unsigned int> > pep2ixs_;
     vector<string> connectorStrings_;

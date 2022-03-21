@@ -29,20 +29,21 @@ using namespace std;
 #include "Option.h"
 #include "Peptides.h"
 
-Peptides::Peptides() : minLen_(4u), replaceI_(false), seed_(1u), multFactor_(1u), 
-    sharedPeptideRatio_(0.0), inFile_(""), outFile_(""), 
-    proteinNamePrefix_("mimic|Random_"), prependOriginal_(false), 
+Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, unsigned int maxTries, bool replaceI) :
+    maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
+    multFactor_(1u), sharedPeptideRatio_(0.0), inFile_(""), outFile_(""),
+    proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
     background_() {}
 Peptides::~Peptides() {}
 
-void Peptides::printAll(const vector<string>& connectorStrings, 
+void Peptides::printAll(const vector<string>& connectorStrings,
     const std::string& suffix, std::ostream& os) {
   unsigned int count = 0;
   vector<string> outPep(connectorStrings.size());
   map<string,set<unsigned int> >::const_iterator it = pep2ixs_.begin();
   for (; it != pep2ixs_.end(); it++) {
     set<unsigned int>::const_iterator ixIt = it->second.begin();
-    for (; ixIt != it->second.end(); ixIt++) {  
+    for (; ixIt != it->second.end(); ixIt++) {
       assert(outPep[*ixIt] == "");
       outPep[*ixIt] = it->first;
       count++;
@@ -89,21 +90,21 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
     if (pos == 0 || seq[pos] == 'K' || seq[pos] == 'R') {
       // store peptide without C-terminal 'K/R'
         addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
-      
-      // store single/multiple consecutive 'K/R' to leave unchanged in 
+
+      // store single/multiple consecutive 'K/R' to leave unchanged in
       // shuffled protein sequence
       int len = 1;
       while (pos+len+1 < protLen && (seq[pos+len-1] == 'K' || seq[pos+len-1] == 'R')) {
         len++;
       }
       connectorStrings_.push_back(seq.substr(pos,len));
-      
+
       // update position to jump over 'K/R' region
       lastPos = pos + len;
       pos += len - 1;
     }
   }
-  
+
   // store protein C-terminal peptide
     addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
 }
@@ -116,7 +117,7 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
   bool spillOver = false;
   while (getline(fastaIn, line)) {
     if (write) os << line << std::endl;
-    
+
     if (line[0] == '>') { // id line
       if (spillOver) {
         assert(seq.size() > 0);
@@ -132,7 +133,7 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
       seq += line;
       spillOver = true;
     }
-  } 
+  }
   if (spillOver) {
     cleaveProtein(seq, pepNo);
   }
@@ -188,7 +189,7 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
   for(; it != normalPep2ixs.end(); it++) {
     checkAndMarkUsedPeptide(it->first, force);
   }
-  
+
   it = normalPep2ixs.begin();
   for (; it != normalPep2ixs.end(); it++) {
     double uniRand = ( (double)rand() / ((double)RAND_MAX+(double)1) );
@@ -199,10 +200,10 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
       do {
         shuffle(it->first, scrambledPeptide);
         peptideUsed = checkAndMarkUsedPeptide(scrambledPeptide);
-      } while ( peptideUsed && 
-               (it->first).length() >= minLen_ &&  
+      } while ( peptideUsed &&
+               (it->first).length() >= minLen_ &&
                ++tries < maxTries);
-      
+
       // if scrambling does not give a usable peptide, mutate some AAs
       if (tries == maxTries) {
         tries = 0;
@@ -222,27 +223,28 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
 
 int Peptides::run() {
   srand(seed_);
-  
+
   std::ofstream outFileStream;
   if (outFile_.size() > 0) {
     outFileStream.open(outFile_.c_str(), ios::out);
   }
   std::ostream &outStream = outFile_.size() > 0 ? outFileStream : std::cout;
-  
+
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
   readFasta(inFile_, prependOriginal_, outStream);
   for (unsigned int m = 0; m < multFactor_; ++m) {
-    Peptides entrapmentDB;
-    
+    Peptides entrapmentDB(minLen_, usedPeptides_, maxTries, replaceI_);
+
     cerr << "Shuffling round: " << (m+1) << endl;
     entrapmentDB.shuffle(pep2ixs_);
-    
+
     ostringstream suffix("");
     if (multFactor_ > 1) {
       suffix << "|shuffle_" << (m+1);
     }
-    
+
     entrapmentDB.printAll(connectorStrings_, suffix.str(), outStream);
+    usedPeptides_ = entrapmentDB.usedPeptides_;
   }
   return 0;
 }
@@ -252,7 +254,7 @@ bool Peptides::parseOptions(int argc, char **argv){
   intro << "Usage:" << endl;
   intro << "   mimic <fasta-file>" << endl;
   CommandLineParser cmd(intro.str());
-  
+
   cmd.defineOption("o",
       "out-file",
       "File to write the mimicked protein sequences to (Default: prints to stdout)",
@@ -278,9 +280,14 @@ bool Peptides::parseOptions(int argc, char **argv){
       "Prepend the original fasta file to the output",
       "",
       TRUE_IF_SET);
-  
+    cmd.defineOption("I",
+                     "replaceI",
+                     "New sequences are checked if they were already generated. If this flag is added all I will count as L for this check.",
+                     "",
+                     TRUE_IF_SET);
+
   cmd.parseArgs(argc, argv);
-  
+
   if (cmd.optionSet("o")) {
     outFile_ = cmd.options["o"];
   }
@@ -299,7 +306,10 @@ bool Peptides::parseOptions(int argc, char **argv){
   if (cmd.optionSet("P")) {
     prependOriginal_ = true;
   }
-  
+  if (cmd.optionSet("I")) {
+    replaceI_ = true;
+  }
+
   if (cmd.arguments.size() > 0) {
     inFile_ = cmd.arguments[0];
   } else {
