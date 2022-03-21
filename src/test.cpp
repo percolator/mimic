@@ -23,25 +23,23 @@ SCENARIO("normal test") {
             ">mimic|Random_1|shuffle_1",
             "ACIK",
             ">mimic|Random_1|shuffle_2",
-            "AIHK",
+            "AILK",
             ">mimic|Random_1|shuffle_3",
-            "AIFK",
+            "AIGK",
             ">mimic|Random_1|shuffle_4",
             "AIYK",
             ">mimic|Random_1|shuffle_5",
             "AIEK",
             ">mimic|Random_1|shuffle_6",
-            "AIGK",
+            "AIDK",
             ">mimic|Random_1|shuffle_7",
-            "AINK",
+            "AILK",
             ">mimic|Random_1|shuffle_8",
-            "AIVK",
-            ">mimic|Random_1|shuffle_9",
             "AITK",
+            ">mimic|Random_1|shuffle_9",
+            "AISK",
             ">mimic|Random_1|shuffle_10",
             "AIAK",
-
-
     };
 
     string line;
@@ -107,4 +105,16 @@ SCENARIO("Test AA dist"){
         CHECK(defaultDist.getDist().size() == 3);
         checkSum(distSum(defaultDist.getDist()));
     }
+}
+
+SCENARIO("Test Abs AA dist") {
+    AbsAminoAcidDist dist;
+    dist.add('A');
+    dist.add('A');
+    dist.add('K');
+    dist.add('L');
+    auto relDist = dist.getDist();
+    CHECK(relDist.at('A') == 0.5);
+    CHECK(relDist.at('K') == 0.25);
+    CHECK(relDist.at('L') == 0.25);
 }

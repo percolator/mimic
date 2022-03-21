@@ -50,10 +50,6 @@ AminoAcidDist::AminoAcidDist(bool removeIL)
     setDist(defaultDist(), removeIL);
 }
 
-AminoAcidDist::~AminoAcidDist()
-{
-}
-
 char AminoAcidDist::generateAA(double p) {
   assert(p >= 0.0 && p <= 1.0);
   double cumulative = 0.0;
@@ -89,4 +85,19 @@ void AminoAcidDist::normalize(map<char, double> &dist) {
 
 const map<char, double> &AminoAcidDist::getDist() const {
     return dist_;
+}
+
+map<char, double> AbsAminoAcidDist::getDist() const {
+    int sum = std::accumulate(dist_.cbegin(), dist_.cend(), 0, [](const int &cum, const std::pair<char, int> &pair){
+        return cum+pair.second;
+    });
+    map<char, double> relDist;
+    for(auto &pair : dist_){
+        relDist[pair.first] = static_cast<double>(pair.second) / static_cast<double>(sum);
+    }
+    return relDist;
+}
+
+void AbsAminoAcidDist::add(char AA) {
+    ++dist_[AA];
 }

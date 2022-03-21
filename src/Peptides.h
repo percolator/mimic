@@ -16,18 +16,20 @@
  *******************************************************************************/
 #ifndef PEPTIDES_H_
 #define PEPTIDES_H_
-#include "string"
-#include "vector"
-#include "map"
-#include "set"
+#include <string>
+#include <vector>
+#include <map>
+#include <set>
+#include <random>
 #include "AminoAcidDist.h"
 using namespace std;
 
 class Peptides
 {
   public:
-    explicit Peptides(unsigned int minLen, set<string> usedPeptides, unsigned int maxTries = 1000, bool replaceI=false);
-    virtual ~Peptides();
+    Peptides(unsigned int minLen, set<string> usedPeptides, AminoAcidDist background, unsigned int maxTries = 1000, bool replaceI=false);
+    Peptides(unsigned int minLen, set<string> usedPeptides, unsigned int maxTries = 1000, bool replaceI=false);
+    Peptides();
     
     bool parseOptions(int argc, char **argv);
     int run();
@@ -66,6 +68,8 @@ class Peptides
     
     AminoAcidDist background_;
     std::mt19937 rGen;
+    bool inferAAFrequency_;
+    AbsAminoAcidDist absBackground;
 };
 
 #endif /*PEPTIDES_H_*/

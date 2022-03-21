@@ -16,6 +16,7 @@
  *******************************************************************************/
 #include <map>
 #include <set>
+#include <utility>
 #include <vector>
 #include <string>
 #include <iostream>
@@ -50,12 +51,11 @@ std::vector<size_t> getIdxs(const string& sequence){
     return idxs;
 }
 
-Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, unsigned int maxTries, bool replaceI) :
+Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, AminoAcidDist background, unsigned int maxTries, bool replaceI) :
     maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
     multFactor_(1u), sharedPeptideRatio_(0.0), inFile_(""), outFile_(""),
     proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
-    background_(replaceI) {}
-Peptides::~Peptides() {}
+    background_{std::move(background)}, inferAAFrequency_{false} {}
 
 void Peptides::printAll(const vector<string>& connectorStrings,
     const std::string& suffix, std::ostream& os) {
@@ -97,6 +97,9 @@ void Peptides::printAll(const vector<string>& connectorStrings,
 }
 
 void Peptides::addPeptide(const string& peptide, unsigned int pepNo) {
+  for(char aa: peptide){
+      absBackground.add(aa);
+  }
   assert(pep2ixs_[peptide].count(pepNo) == 0);
   pep2ixs_[peptide].insert(pepNo);
   assert(pepNo+1 == connectorStrings_.size());
@@ -157,6 +160,9 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
   }
   if (spillOver) {
     cleaveProtein(seq, pepNo);
+  }
+  if(inferAAFrequency_){
+      background_.setDist(absBackground.getDist(), replaceI_);
   }
 }
 
@@ -259,7 +265,7 @@ int Peptides::run() {
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
   readFasta(inFile_, prependOriginal_, outStream);
   for (unsigned int m = 0; m < multFactor_; ++m) {
-    Peptides entrapmentDB(minLen_, usedPeptides_, maxTries, replaceI_);
+    Peptides entrapmentDB(minLen_, usedPeptides_, background_, maxTries, replaceI_);
 
     cerr << "Shuffling round: " << (m+1) << endl;
     entrapmentDB.shuffle(pep2ixs_);
@@ -308,7 +314,12 @@ bool Peptides::parseOptions(int argc, char **argv){
       TRUE_IF_SET);
     cmd.defineOption("I",
                      "replaceI",
-                     "New sequences are checked if they were already generated. If this flag is added all I will count as L for this check.",
+                     "New sequences are checked if they were already generated. If this flag is added all I will count as L for this check",
+                     "",
+                     TRUE_IF_SET);
+    cmd.defineOption("e",
+                     "empiric",
+                     "Instead of assuming the AA frequency infer it from the given fasta file",
                      "",
                      TRUE_IF_SET);
 
@@ -335,6 +346,9 @@ bool Peptides::parseOptions(int argc, char **argv){
   if (cmd.optionSet("I")) {
     replaceI_ = true;
   }
+    if (cmd.optionSet("e")) {
+        inferAAFrequency_ = true;
+    }
 
   if (cmd.arguments.size() > 0) {
     inFile_ = cmd.arguments[0];
@@ -343,6 +357,15 @@ bool Peptides::parseOptions(int argc, char **argv){
     return false;
   }
   return true;
+}
+
+Peptides::Peptides(unsigned int minLen, set<string> usedPeptides, unsigned int maxTries, bool replaceI):
+Peptides(minLen, std::move(usedPeptides), AminoAcidDist{replaceI}, maxTries, replaceI) {
+
+}
+
+Peptides::Peptides() : Peptides(4, {}, AminoAcidDist{false}, 1000, false) {
+
 }
 
 
