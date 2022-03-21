@@ -19,6 +19,7 @@ using namespace std;
 #include "AminoAcidDist.h"
 #include <cassert>
 #include <numeric>
+#include <stdexcept>
 
 map<char, double> defaultDist(){
     map<char, double> dist;
@@ -60,7 +61,9 @@ char AminoAcidDist::generateAA(double p) {
       return it->first;
     }
   }
-  assert(false);
+  // the used distribution may sum up to a value that is near 1 not exactly one. In case its a bit smaller this part
+  // can be reached so returning the last value should be fine.
+  return it->first;
 }
 
 void AminoAcidDist::setDist(map<char, double> dist, bool removeIL) {
@@ -78,6 +81,9 @@ void AminoAcidDist::normalize(map<char, double> &dist) {
     double sum = std::accumulate(dist.cbegin(), dist.cend(), 0.0, [](const double &cum, const std::pair<char, double> &pair){
         return cum+pair.second;
     });
+    if (sum <= 0){
+        throw std::runtime_error("Summed amino acid abundance can not be 0 or smaller");
+    }
     for(auto &pair : dist){
         pair.second /= sum;
     }

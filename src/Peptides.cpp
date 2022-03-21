@@ -184,7 +184,7 @@ void Peptides::mutate(const string& in, string& out) {
       return;
   }
   std::uniform_int_distribution<size_t> distrib(0, i-1);
-  double d=((double)rand()/((double)RAND_MAX+(double)1));
+  double d= uniformDist();
   auto mutateId = okIds[distrib(rGen)];
   out[mutateId] = background_.generateAA(d);
 }
@@ -213,7 +213,7 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
 
   it = normalPep2ixs.begin();
   for (; it != normalPep2ixs.end(); it++) {
-    double uniRand = ( (double)rand() / ((double)RAND_MAX+(double)1) );
+    double uniRand = uniformDist();
     string scrambledPeptide = it->first;
     if (uniRand >= sharedPeptideRatio_) {
       size_t tries = 0;
@@ -357,6 +357,11 @@ Peptides(minLen, std::move(usedPeptides), AminoAcidDist{replaceI}, maxTries, rep
 
 Peptides::Peptides() : Peptides(4, {}, AminoAcidDist{false}, 1000, false) {
 
+}
+
+double Peptides::uniformDist(double a, double b) {
+    auto dist = std::uniform_real_distribution(a,b);
+    return dist(rGen);
 }
 
 

@@ -46,6 +46,7 @@ class Peptides
     bool checkAndMarkUsedPeptide(const string& pep, bool force=false);
     
     void cleaveProtein(string seq, unsigned int & pepNo);
+    double uniformDist(double a = 0.0, double b = 1.0);
   protected:
     static const unsigned int lineLen = 60;
     unsigned int maxTries;
