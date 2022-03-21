@@ -54,7 +54,7 @@ Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, unsigned in
     maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
     multFactor_(1u), sharedPeptideRatio_(0.0), inFile_(""), outFile_(""),
     proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
-    background_() {}
+    background_(replaceI) {}
 Peptides::~Peptides() {}
 
 void Peptides::printAll(const vector<string>& connectorStrings,

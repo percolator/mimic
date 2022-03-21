@@ -24,11 +24,17 @@ using namespace std;
 class AminoAcidDist
 {
 public:
-	AminoAcidDist();
+	explicit AminoAcidDist(bool removeIl);
 	virtual ~AminoAcidDist();
     char generateAA(double p);
+    static void normalize(map<char,double> &dist);
 protected:
-    map<char,double> dist;
+    map<char,double> dist_;
+public:
+    const map<char, double> &getDist() const;
+
+public:
+    void setDist(map<char, double> dist, bool removeIL);
 };
 
 #endif /*AMINOACIDDIST_H_*/
