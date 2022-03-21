@@ -31,7 +31,7 @@ class Peptides
     
     bool parseOptions(int argc, char **argv);
     int run();
-    
+
     void readFasta(string& path, bool write, std::ostream& os);
     void printAll(const vector<string>& connectorStrings, 
                   const std::string& suffix,
@@ -65,6 +65,7 @@ class Peptides
     bool prependOriginal_;
     
     AminoAcidDist background_;
+    std::mt19937 rGen;
 };
 
 #endif /*PEPTIDES_H_*/

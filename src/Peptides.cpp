@@ -24,10 +24,31 @@
 #include <cstdlib>
 #include <math.h>
 #include <assert.h>
+#include <numeric>
+#include <random>
 using namespace std;
 #include "AminoAcidDist.h"
 #include "Option.h"
 #include "Peptides.h"
+
+std::vector<size_t> getNotILIdxs(const string& sequence){
+    std::vector<std::size_t> idxs;
+    idxs.reserve(sequence.length());
+    for (std::size_t i = 0; i < sequence.length(); ++i){
+        if(sequence[i] != 'I' && sequence[i] != 'L') {
+            idxs.push_back(i);
+        }
+    }
+    return idxs;
+}
+std::vector<size_t> getIdxs(const string& sequence){
+    std::vector<std::size_t> idxs;
+    idxs.reserve(sequence.length());
+    for (std::size_t i = 0; i < sequence.length(); ++i){
+        idxs.push_back(i);
+    }
+    return idxs;
+}
 
 Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, unsigned int maxTries, bool replaceI) :
     maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
@@ -156,10 +177,20 @@ void Peptides::shuffle(const string& in,string& out) {
 }
 void Peptides::mutate(const string& in, string& out) {
   out=in;
-  int i = in.length();
-  int j=(int)((double)(i+1)*((double)rand()/((double)RAND_MAX+(double)1)));
+    std::vector<size_t> okIds;
+  if(replaceI_) {
+      okIds = getNotILIdxs(in);
+  } else {
+      okIds = getIdxs(in);
+  }
+  std::size_t i = okIds.size();
+  if (i==0){
+      return;
+  }
+  std::uniform_int_distribution<size_t> distrib(0, i-1);
   double d=((double)rand()/((double)RAND_MAX+(double)1));
-  out[j] = background_.generateAA(d);
+  auto mutateId = okIds[distrib(rGen)];
+  out[mutateId] = background_.generateAA(d);
 }
 
 bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
@@ -217,6 +248,7 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
 
 int Peptides::run() {
   srand(seed_);
+  rGen.seed(seed_);
 
   std::ofstream outFileStream;
   if (outFile_.size() > 0) {
