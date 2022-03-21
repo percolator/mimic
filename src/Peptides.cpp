@@ -27,6 +27,7 @@
 #include <assert.h>
 #include <numeric>
 #include <random>
+#include <algorithm>
 using namespace std;
 #include "AminoAcidDist.h"
 #include "Option.h"
@@ -168,18 +169,7 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
 
 void Peptides::shuffle(const string& in,string& out) {
   out=in;
-  int i = in.length();
-  if (i==0) return;
-  // fisher_yates_shuffle
-  for (; --i; ) {
-    double d=((double)(i+1)*((double)rand()/((double)RAND_MAX+(double)1)));
-    int j=(int)d;
-    if (i!=j){
-      char a = out[i];
-      out[i] = out[j];
-      out[j] = a;
-    }
-  }
+  std::shuffle(out.begin(), out.end(), rGen);
 }
 void Peptides::mutate(const string& in, string& out) {
   out=in;
@@ -345,10 +335,11 @@ bool Peptides::parseOptions(int argc, char **argv){
   }
   if (cmd.optionSet("I")) {
     replaceI_ = true;
+    background_ = AminoAcidDist(true);
   }
-    if (cmd.optionSet("e")) {
-        inferAAFrequency_ = true;
-    }
+  if (cmd.optionSet("e")) {
+      inferAAFrequency_ = true;
+  }
 
   if (cmd.arguments.size() > 0) {
     inFile_ = cmd.arguments[0];
