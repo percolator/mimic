@@ -168,12 +168,6 @@ bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
     for(string::iterator it=checkPep.begin();it!=checkPep.end();it++) {
       if (*it=='I')
         *it='L';
-      if (*it=='N')
-        *it='L';
-      if (*it=='Q')
-        *it='E';
-      if (*it=='K')
-        *it='E';
     }
   }
   bool used = usedPeptides_.count(checkPep) > 0;
