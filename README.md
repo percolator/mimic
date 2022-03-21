@@ -10,7 +10,13 @@ C++ code Matthew used to generate the entrapment fasta files, which is an update
 >- For the search, you concatenate the target database with the entrapment database and use it as your new target database (in the mimic program, you can do this easily by using the -P flag). If you need to create a decoy database yourself, you will have to reverse the entire concatenated database (target+entrapment).
 >- In the end you want to compare the decoy FDR (#decoys / #targets) with the entrapment FDR (#entrapments / #targets), which should be approximately equal.
 
-
+# Conan
+- install conan version 1.40 
+- add new profile
+```bash
+conan profile new gcc --detect
+conan profile update settings.compiler.libcxx=libstdc++11 gcc
+```
 
 # Building
 To build the project please execute
