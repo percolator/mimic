@@ -16,6 +16,12 @@
  *******************************************************************************/
 #ifndef PEPTIDES_H_
 #define PEPTIDES_H_
+#include "string"
+#include "vector"
+#include "map"
+#include "set"
+#include "AminoAcidDist.h"
+using namespace std;
 
 class Peptides
 {

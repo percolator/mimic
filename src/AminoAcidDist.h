@@ -17,6 +17,9 @@
 
 #ifndef AMINOACIDDIST_H_
 #define AMINOACIDDIST_H_
+#include "map"
+
+using namespace std;
 
 class AminoAcidDist
 {
