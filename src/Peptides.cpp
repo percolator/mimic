@@ -248,6 +248,10 @@ int Peptides::run() {
 }
 
 bool Peptides::parseOptions(int argc, char **argv){
+    cout<<*argv<<endl;
+    cout<<*(argv+1)<<endl;
+    cout<<*(argv+2)<<endl;
+    cout<<*(argv+3)<<endl;
   ostringstream intro;
   intro << "Usage:" << endl;
   intro << "   mimic <fasta-file>" << endl;
@@ -310,13 +314,6 @@ bool Peptides::parseOptions(int argc, char **argv){
 }
 
 
-int main(int argc, char **argv){
-  Peptides pPeptides;
-  int retVal = -1;
-  if (pPeptides.parseOptions(argc, argv)) {
-    retVal = pPeptides.run();
-  }
-  return retVal;
-}   
+
 
 

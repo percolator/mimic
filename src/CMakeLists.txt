@@ -14,7 +14,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 # add_library(trace STATIC ${TRACE_SRCS} )
 
-add_executable(mimic AminoAcidDist.cpp  Option.cpp Peptides.cpp)
+add_executable(mimic mimic.cpp AminoAcidDist.cpp  Option.cpp Peptides.cpp)
 target_link_libraries(mimic m)
 target_compile_features(mimic PRIVATE cxx_std_17)
 install(TARGETS mimic DESTINATION bin)
@@ -37,6 +37,7 @@ conan_cmake_run(CONANFILE conanfile_gcc.txt
 
 include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
 # These tests can use the Catch2-provided main
-add_executable(tests test.cpp)
+add_executable(tests test.cpp AminoAcidDist.cpp  Option.cpp Peptides.cpp)
 target_compile_features(tests PRIVATE cxx_std_17)
 target_link_libraries(tests PRIVATE CONAN_PKG::catch2)
+configure_file(${PROJECT_SOURCE_DIR}/../min.fasta ${CMAKE_BINARY_DIR}/bin/ COPYONLY)
