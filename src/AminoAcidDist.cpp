@@ -17,7 +17,7 @@
 #include <map>
 using namespace std;
 #include "AminoAcidDist.h"
-#include <assert.h>
+#include <cassert>
 #include <numeric>
 
 map<char, double> defaultDist(){

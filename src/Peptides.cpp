@@ -23,8 +23,8 @@
 #include <sstream>
 #include <fstream>
 #include <cstdlib>
-#include <math.h>
-#include <assert.h>
+#include <cmath>
+#include <cassert>
 #include <numeric>
 #include <random>
 #include <algorithm>
@@ -54,7 +54,7 @@ std::vector<size_t> getIdxs(const string& sequence){
 
 Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, AminoAcidDist background, unsigned int maxTries, bool replaceI) :
     maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
-    multFactor_(1u), sharedPeptideRatio_(0.0), inFile_(""), outFile_(""),
+    multFactor_(1u), sharedPeptideRatio_(0.0),
     proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
     background_{std::move(background)}, inferAAFrequency_{false} {}
 
@@ -62,11 +62,11 @@ void Peptides::printAll(const vector<string>& connectorStrings,
     const std::string& suffix, std::ostream& os) {
   unsigned int count = 0;
   vector<string> outPep(connectorStrings.size());
-  map<string,set<unsigned int> >::const_iterator it = pep2ixs_.begin();
+  auto it = pep2ixs_.begin();
   for (; it != pep2ixs_.end(); it++) {
-    set<unsigned int>::const_iterator ixIt = it->second.begin();
+    auto ixIt = it->second.begin();
     for (; ixIt != it->second.end(); ixIt++) {
-      assert(outPep[*ixIt] == "");
+      assert(outPep[*ixIt].empty());
       outPep[*ixIt] = it->first;
       count++;
     }
@@ -137,7 +137,7 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
 
 void Peptides::readFasta(string& path, bool write, std::ostream& os) {
   ifstream fastaIn(path.c_str(), ios::in);
-  string line(""), pep(""), seq("");
+  string line, pep, seq;
   unsigned int pepNo = 0,proteinNo = 0;
   bool spillOver = false;
   while (getline(fastaIn, line)) {
@@ -145,7 +145,7 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
 
     if (line[0] == '>') { // id line
       if (spillOver) {
-        assert(seq.size() > 0);
+        assert(!seq.empty());
         // add peptides and KR-stretches to connectorStrings_
         cleaveProtein(seq, pepNo);
         seq = "";
@@ -192,9 +192,9 @@ void Peptides::mutate(const string& in, string& out) {
 bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
   string checkPep=pep;
   if (replaceI_) {
-    for(string::iterator it=checkPep.begin();it!=checkPep.end();it++) {
-      if (*it=='I')
-        *it='L';
+    for(char & it : checkPep) {
+      if (it=='I')
+        it='L';
     }
   }
   bool used = usedPeptides_.count(checkPep) > 0;
@@ -205,7 +205,7 @@ bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
 
 
 void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
-  map<string,set<unsigned int> >::const_iterator it = normalPep2ixs.begin();
+  auto it = normalPep2ixs.begin();
   bool force = true;
   for(; it != normalPep2ixs.end(); it++) {
     checkAndMarkUsedPeptide(it->first, force);
@@ -247,10 +247,10 @@ int Peptides::run() {
   rGen.seed(seed_);
 
   std::ofstream outFileStream;
-  if (outFile_.size() > 0) {
+  if (!outFile_.empty()) {
     outFileStream.open(outFile_.c_str(), ios::out);
   }
-  std::ostream &outStream = outFile_.size() > 0 ? outFileStream : std::cout;
+  std::ostream &outStream = !outFile_.empty() ? outFileStream : std::cout;
 
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
   readFasta(inFile_, prependOriginal_, outStream);
@@ -341,7 +341,7 @@ bool Peptides::parseOptions(int argc, char **argv){
       inferAAFrequency_ = true;
   }
 
-  if (cmd.arguments.size() > 0) {
+  if (!cmd.arguments.empty()) {
     inFile_ = cmd.arguments[0];
   } else {
     std::cerr << "No fasta file specified" << std::endl;
