@@ -112,7 +112,7 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
     --protLen;
   }
   for (; pos<protLen; pos++) {
-    if (pos == 0 || seq[pos] == 'K' || seq[pos] == 'R') {
+    if (pos == 0 || seq[pos] == 'K' || seq[pos] == 'R' || pos==protLen-1) {
       // store peptide without C-terminal 'K/R'
         addPeptide(seq.substr(lastPos,pos-lastPos), pepNo++);
 
