@@ -15,31 +15,31 @@ SCENARIO("normal test") {
     ptest[7] = nullptr;
     unsigned int minLength = 0u;
     unsigned int maxTries = 50u;
-    Peptides peptides(minLength, {}, maxTries);
+    Peptides peptides(minLength, {}, std::mt19937{}, maxTries);
     peptides.parseOptions(7, ptest);
     peptides.run();
 
     std::vector<string> expected{
             ">mimic|Random_1|shuffle_1",
-            "ACIKDYE",
+            "ACIKDCE",
             ">mimic|Random_1|shuffle_2",
             "AIFKDQE",
             ">mimic|Random_1|shuffle_3",
-            "AIAKDNE",
+            "AIQKDAE",
             ">mimic|Random_1|shuffle_4",
-            "AISKDME",
+            "AIPKDVE",
             ">mimic|Random_1|shuffle_5",
-            "AIMKDFE",
+            "AIAKDPE",
             ">mimic|Random_1|shuffle_6",
-            "AITKDGE",
+            "AIVKDFE",
             ">mimic|Random_1|shuffle_7",
-            "AIGKDTE",
+            "AIDKDME",
             ">mimic|Random_1|shuffle_8",
-            "AINKDVE",
+            "AIHKDGE",
             ">mimic|Random_1|shuffle_9",
-            "AIEKDSE",
+            "AIEKDWE",
             ">mimic|Random_1|shuffle_10",
-            "AIYKDAE",
+            "AIYKDNE",
     };
 
     string line;

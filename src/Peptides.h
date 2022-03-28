@@ -27,8 +27,8 @@ using namespace std;
 class Peptides
 {
   public:
-    Peptides(unsigned int minLen, set<string> usedPeptides, AminoAcidDist background, unsigned int maxTries = 1000, bool replaceI=false);
-    Peptides(unsigned int minLen, set<string> usedPeptides, unsigned int maxTries = 1000, bool replaceI=false);
+    Peptides(unsigned int minLen, set<string> usedPeptides, AminoAcidDist background, std::mt19937 rGen, unsigned int maxTries = 1000, bool replaceI=false);
+    Peptides(unsigned int minLen, set<string> usedPeptides, std::mt19937 rGen, unsigned int maxTries = 1000, bool replaceI=false);
     Peptides();
     
     bool parseOptions(int argc, char **argv);

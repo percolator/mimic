@@ -18,6 +18,7 @@
 #ifndef AMINOACIDDIST_H_
 #define AMINOACIDDIST_H_
 #include <map>
+#include <iostream>
 
 using namespace std;
 
@@ -34,6 +35,7 @@ public:
 
 public:
     void setDist(map<char, double> dist, bool removeIL);
+    void print(std::ostream& os);
 };
 
 class AbsAminoAcidDist

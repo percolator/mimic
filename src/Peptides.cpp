@@ -52,11 +52,11 @@ std::vector<size_t> getIdxs(const string& sequence){
     return idxs;
 }
 
-Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, AminoAcidDist background, unsigned int maxTries, bool replaceI) :
+Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, AminoAcidDist background, std::mt19937 rGen, unsigned int maxTries, bool replaceI) :
     maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
     multFactor_(1u), sharedPeptideRatio_(0.0),
     proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
-    background_{std::move(background)}, inferAAFrequency_{false} {}
+    background_{std::move(background)}, inferAAFrequency_{false}, rGen{rGen} {}
 
 void Peptides::printAll(const vector<string>& connectorStrings,
     const std::string& suffix, std::ostream& os) {
@@ -215,7 +215,7 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
   for (; it != normalPep2ixs.end(); it++) {
     double uniRand = uniformDist();
     string scrambledPeptide = it->first;
-    if (uniRand >= sharedPeptideRatio_) {
+    if (uniRand >= sharedPeptideRatio_ && scrambledPeptide.length() > 0) {
       size_t tries = 0;
       bool peptideUsed;
       do {
@@ -254,8 +254,9 @@ int Peptides::run() {
 
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
   readFasta(inFile_, prependOriginal_, outStream);
+  background_.print(cerr);
   for (unsigned int m = 0; m < multFactor_; ++m) {
-    Peptides entrapmentDB(minLen_, usedPeptides_, background_, maxTries, replaceI_);
+    Peptides entrapmentDB(minLen_, usedPeptides_, background_, rGen, maxTries, replaceI_);
 
     cerr << "Shuffling round: " << (m+1) << endl;
     entrapmentDB.shuffle(pep2ixs_);
@@ -267,6 +268,7 @@ int Peptides::run() {
 
     entrapmentDB.printAll(connectorStrings_, suffix.str(), outStream);
     usedPeptides_ = entrapmentDB.usedPeptides_;
+    rGen = entrapmentDB.rGen;
   }
   return 0;
 }
@@ -350,12 +352,12 @@ bool Peptides::parseOptions(int argc, char **argv){
   return true;
 }
 
-Peptides::Peptides(unsigned int minLen, set<string> usedPeptides, unsigned int maxTries, bool replaceI):
-Peptides(minLen, std::move(usedPeptides), AminoAcidDist{replaceI}, maxTries, replaceI) {
+Peptides::Peptides(unsigned int minLen, set<string> usedPeptides, std::mt19937 rGen, unsigned int maxTries, bool replaceI):
+Peptides(minLen, std::move(usedPeptides), AminoAcidDist{replaceI}, rGen, maxTries, replaceI) {
 
 }
 
-Peptides::Peptides() : Peptides(4, {}, AminoAcidDist{false}, 1000, false) {
+Peptides::Peptides() : Peptides(4, {}, AminoAcidDist{false}, {}, 1000, false) {
 
 }
 

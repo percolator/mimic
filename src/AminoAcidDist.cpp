@@ -20,6 +20,7 @@ using namespace std;
 #include <cassert>
 #include <numeric>
 #include <stdexcept>
+#include <iomanip>
 
 map<char, double> defaultDist(){
     map<char, double> dist;
@@ -91,6 +92,14 @@ void AminoAcidDist::normalize(map<char, double> &dist) {
 
 const map<char, double> &AminoAcidDist::getDist() const {
     return dist_;
+}
+
+void AminoAcidDist::print(ostream &os) {
+    os << "Amino Acid Distribution:\n";
+    os << std::setprecision(2);
+for (auto it : dist_){
+    os << it.first << ": " << it.second*100 << "%\n";
+}
 }
 
 map<char, double> AbsAminoAcidDist::getDist() const {
