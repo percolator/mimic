@@ -114,5 +114,10 @@ map<char, double> AbsAminoAcidDist::getDist() const {
 }
 
 void AbsAminoAcidDist::add(char AA) {
-    ++dist_[AA];
+    // only count proper AA
+    if (AA == 'A' || AA == 'C' || AA == 'D' || AA == 'E' || AA == 'F' || AA == 'G' || AA == 'H' || AA == 'I' ||
+    AA == 'K' || AA == 'L' || AA == 'M' || AA == 'N' || AA == 'O' || AA == 'P' || AA == 'Q' || AA == 'R'  || AA == 'S' ||
+    AA == 'T' || AA == 'U' || AA == 'V' || AA == 'W' || AA == 'Y'){
+        ++dist_[AA];
+    }
 }
