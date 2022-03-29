@@ -204,17 +204,17 @@ bool Peptides::checkAndMarkUsedPeptide(const string& pep, bool force) {
 }
 
 
-void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
+void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs, std::ofstream &logger) {
   auto it = normalPep2ixs.begin();
   bool force = true;
   for(; it != normalPep2ixs.end(); it++) {
     checkAndMarkUsedPeptide(it->first, force);
   }
-
   it = normalPep2ixs.begin();
   for (; it != normalPep2ixs.end(); it++) {
     double uniRand = uniformDist();
     string scrambledPeptide = it->first;
+    bool wasMutated = false;
     if (uniRand >= sharedPeptideRatio_ && scrambledPeptide.length() > 0) {
       size_t tries = 0;
       bool peptideUsed;
@@ -232,11 +232,15 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs) {
         string mutatedPeptide;
         do {
           mutate(scrambledPeptide, mutatedPeptide);
+          wasMutated = true;
           peptideUsed = checkAndMarkUsedPeptide(mutatedPeptide);
           scrambledPeptide = mutatedPeptide;
         } while ( peptideUsed && ++tries < maxTries);
       }
       //if (tries == maxTries) cerr << "Gave up on peptide " << it->first << endl;
+    }
+    if(isVerbose && scrambledPeptide.length() > minLen_){
+        logger << it->first << ',' << scrambledPeptide << ',' << scrambledPeptide.length() << ',' << wasMutated << '\n';
     }
     pep2ixs_[scrambledPeptide].insert(it->second.begin(),it->second.end());
   }
@@ -252,6 +256,9 @@ int Peptides::run() {
   }
   std::ostream &outStream = !outFile_.empty() ? outFileStream : std::cout;
 
+  std::ofstream logger("shuffle.log", ios::trunc);
+  logger << "original" << ',' << "scrambled" << ',' << "length" << ',' << "wasMutated" << '\n';
+
   cerr << "Reading fasta file and in-silico digesting proteins" << endl;
   readFasta(inFile_, prependOriginal_, outStream);
   background_.print(cerr);
@@ -259,7 +266,7 @@ int Peptides::run() {
     Peptides entrapmentDB(minLen_, usedPeptides_, background_, rGen, maxTries, replaceI_);
 
     cerr << "Shuffling round: " << (m+1) << endl;
-    entrapmentDB.shuffle(pep2ixs_);
+    entrapmentDB.shuffle(pep2ixs_, logger);
 
     ostringstream suffix("");
     if (multFactor_ > 1) {

@@ -40,7 +40,7 @@ class Peptides
                   std::ostream& os);
     
     void addPeptide(const string& peptide, unsigned int pepNo);
-    void shuffle(const map<string,set<unsigned int> >& normalPep2ixs);
+    void shuffle(const map<string,set<unsigned int> >& normalPep2ixs, std::ofstream &logger);
     void shuffle(const string& in, string& out);
     void mutate(const string& in, string& out);
     bool checkAndMarkUsedPeptide(const string& pep, bool force=false);
@@ -71,6 +71,7 @@ class Peptides
     std::mt19937 rGen;
     bool inferAAFrequency_;
     AbsAminoAcidDist absBackground;
+    bool isVerbose = false;
 };
 
 #endif /*PEPTIDES_H_*/
