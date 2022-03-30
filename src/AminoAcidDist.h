@@ -43,6 +43,7 @@ class AbsAminoAcidDist
 public:
     explicit AbsAminoAcidDist() = default;
     void add(char AA);
+    inline static const string validAAs = "ACDEFGHIKLMNOPQRSTUVWY";
 protected:
     map<char,int> dist_;
 public:
