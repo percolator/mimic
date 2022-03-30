@@ -16,31 +16,40 @@
  *******************************************************************************/
 #ifndef PEPTIDES_H_
 #define PEPTIDES_H_
+#include <string>
+#include <vector>
+#include <map>
+#include <set>
+#include <random>
+#include "AminoAcidDist.h"
+using namespace std;
 
 class Peptides
 {
   public:
+    Peptides(unsigned int minLen, set<string> usedPeptides, AminoAcidDist background, std::mt19937 rGen, unsigned int maxTries = 1000, bool replaceI=false);
+    Peptides(unsigned int minLen, set<string> usedPeptides, std::mt19937 rGen, unsigned int maxTries = 1000, bool replaceI=false);
     Peptides();
-    virtual ~Peptides();
     
     bool parseOptions(int argc, char **argv);
     int run();
-    
+
     void readFasta(string& path, bool write, std::ostream& os);
     void printAll(const vector<string>& connectorStrings, 
                   const std::string& suffix,
                   std::ostream& os);
     
     void addPeptide(const string& peptide, unsigned int pepNo);
-    void shuffle(const map<string,set<unsigned int> >& normalPep2ixs);
+    void shuffle(const map<string,set<unsigned int> >& normalPep2ixs, std::ofstream &logger);
     void shuffle(const string& in, string& out);
     void mutate(const string& in, string& out);
     bool checkAndMarkUsedPeptide(const string& pep, bool force=false);
     
     void cleaveProtein(string seq, unsigned int & pepNo);
+    double uniformDist(double a = 0.0, double b = 1.0);
   protected:
-    static const unsigned int lineLen = 60;
-    static const unsigned int maxTries = 1000;
+    static const unsigned int lineLen_ = 60;
+    unsigned int maxTries_;
     
     map<string,set<unsigned int> > pep2ixs_;
     vector<string> connectorStrings_;
@@ -59,6 +68,10 @@ class Peptides
     bool prependOriginal_;
     
     AminoAcidDist background_;
+    std::mt19937 rGen_;
+    bool inferAAFrequency_;
+    AbsAminoAcidDist absBackground_;
+    bool isVerbose_ = false;
 };
 
 #endif /*PEPTIDES_H_*/
