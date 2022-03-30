@@ -97,9 +97,9 @@ const map<char, double> &AminoAcidDist::getDist() const {
 void AminoAcidDist::print(ostream &os) {
     os << "Amino Acid Distribution:\n";
     os << std::setprecision(2);
-for (auto it : dist_){
-    os << it.first << ": " << it.second*100 << "%\n";
-}
+    for (auto it : dist_){
+        os << it.first << ": " << it.second*100 << "%\n";
+    }
 }
 
 map<char, double> AbsAminoAcidDist::getDist() const {
