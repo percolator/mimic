@@ -48,8 +48,8 @@ class Peptides
     void cleaveProtein(string seq, unsigned int & pepNo);
     double uniformDist(double a = 0.0, double b = 1.0);
   protected:
-    static const unsigned int lineLen = 60;
-    unsigned int maxTries;
+    static const unsigned int lineLen_ = 60;
+    unsigned int maxTries_;
     
     map<string,set<unsigned int> > pep2ixs_;
     vector<string> connectorStrings_;
@@ -68,10 +68,10 @@ class Peptides
     bool prependOriginal_;
     
     AminoAcidDist background_;
-    std::mt19937 rGen;
+    std::mt19937 rGen_;
     bool inferAAFrequency_;
-    AbsAminoAcidDist absBackground;
-    bool isVerbose = false;
+    AbsAminoAcidDist absBackground_;
+    bool isVerbose_ = false;
 };
 
 #endif /*PEPTIDES_H_*/

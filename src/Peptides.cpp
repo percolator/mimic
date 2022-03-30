@@ -53,10 +53,10 @@ std::vector<size_t> getIdxs(const string& sequence){
 }
 
 Peptides::Peptides(unsigned int minLength, set<string> usedPeptides, AminoAcidDist background, std::mt19937 rGen, unsigned int maxTries, bool replaceI) :
-    maxTries{maxTries}, usedPeptides_{std::move(usedPeptides)},minLen_(minLength), replaceI_(replaceI), seed_(1u),
-    multFactor_(1u), sharedPeptideRatio_(0.0),
-    proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
-    background_{std::move(background)}, inferAAFrequency_{false}, rGen{rGen} {}
+        maxTries_{maxTries}, usedPeptides_{std::move(usedPeptides)}, minLen_(minLength), replaceI_(replaceI), seed_(1u),
+        multFactor_(1u), sharedPeptideRatio_(0.0),
+        proteinNamePrefix_("mimic|Random_"), prependOriginal_(false),
+        background_{std::move(background)}, inferAAFrequency_{false}, rGen_{rGen} {}
 
 void Peptides::printAll(const vector<string>& connectorStrings,
     const std::string& suffix, std::ostream& os) {
@@ -78,8 +78,8 @@ void Peptides::printAll(const vector<string>& connectorStrings,
       string str = first.str();
       size_t p = 0;
       while (p < str.length()) {
-        os << str.substr(p,lineLen) << endl;
-        p+=lineLen;
+        os << str.substr(p, lineLen_) << endl;
+        p+=lineLen_;
       }
       first.str("");
       os << connectorStrings[ix] << suffix << endl;
@@ -91,15 +91,15 @@ void Peptides::printAll(const vector<string>& connectorStrings,
   string str=first.str();
   size_t p=0;
   while(p<str.length()) {
-    os << str.substr(p,lineLen) << endl;
-    p+=lineLen;
+    os << str.substr(p, lineLen_) << endl;
+    p+=lineLen_;
   }
   first.str("");
 }
 
 void Peptides::addPeptide(const string& peptide, unsigned int pepNo) {
   for(char aa: peptide){
-      absBackground.add(aa);
+      absBackground_.add(aa);
   }
   assert(pep2ixs_[peptide].count(pepNo) == 0);
   pep2ixs_[peptide].insert(pepNo);
@@ -163,13 +163,13 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
     cleaveProtein(seq, pepNo);
   }
   if(inferAAFrequency_){
-      background_.setDist(absBackground.getDist(), replaceI_);
+      background_.setDist(absBackground_.getDist(), replaceI_);
   }
 }
 
 void Peptides::shuffle(const string& in,string& out) {
   out=in;
-  std::shuffle(out.begin(), out.end(), rGen);
+  std::shuffle(out.begin(), out.end(), rGen_);
 }
 void Peptides::mutate(const string& in, string& out) {
   out=in;
@@ -185,7 +185,7 @@ void Peptides::mutate(const string& in, string& out) {
   }
   std::uniform_int_distribution<size_t> distrib(0, i-1);
   double d= uniformDist();
-  auto mutateId = okIds[distrib(rGen)];
+  auto mutateId = okIds[distrib(rGen_)];
   out[mutateId] = background_.generateAA(d);
 }
 
@@ -223,10 +223,10 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs, std:
         peptideUsed = checkAndMarkUsedPeptide(scrambledPeptide);
       } while ( peptideUsed &&
                (it->first).length() >= minLen_ &&
-               ++tries < maxTries);
+                ++tries < maxTries_);
 
       // if scrambling does not give a usable peptide, mutate some AAs
-      if (tries == maxTries) {
+      if (tries == maxTries_) {
         tries = 0;
         scrambledPeptide = it->first;
         string mutatedPeptide;
@@ -235,11 +235,11 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs, std:
           wasMutated = true;
           peptideUsed = checkAndMarkUsedPeptide(mutatedPeptide);
           scrambledPeptide = mutatedPeptide;
-        } while ( peptideUsed && ++tries < maxTries);
+        } while ( peptideUsed && ++tries < maxTries_);
       }
-      //if (tries == maxTries) cerr << "Gave up on peptide " << it->first << endl;
+      //if (tries == maxTries_) cerr << "Gave up on peptide " << it->first << endl;
     }
-    if(isVerbose && scrambledPeptide.length() > minLen_){
+    if(isVerbose_ && scrambledPeptide.length() > minLen_){
         logger << it->first << ',' << scrambledPeptide << ',' << scrambledPeptide.length() << ',' << wasMutated << '\n';
     }
     pep2ixs_[scrambledPeptide].insert(it->second.begin(),it->second.end());
@@ -248,7 +248,7 @@ void Peptides::shuffle(const map<string,set<unsigned int> >& normalPep2ixs, std:
 
 int Peptides::run() {
   srand(seed_);
-  rGen.seed(seed_);
+  rGen_.seed(seed_);
 
   std::ofstream outFileStream;
   if (!outFile_.empty()) {
@@ -263,7 +263,7 @@ int Peptides::run() {
   readFasta(inFile_, prependOriginal_, outStream);
   background_.print(cerr);
   for (unsigned int m = 0; m < multFactor_; ++m) {
-    Peptides entrapmentDB(minLen_, usedPeptides_, background_, rGen, maxTries, replaceI_);
+    Peptides entrapmentDB(minLen_, usedPeptides_, background_, rGen_, maxTries_, replaceI_);
 
     cerr << "Shuffling round: " << (m+1) << endl;
     entrapmentDB.shuffle(pep2ixs_, logger);
@@ -275,7 +275,7 @@ int Peptides::run() {
 
     entrapmentDB.printAll(connectorStrings_, suffix.str(), outStream);
     usedPeptides_ = entrapmentDB.usedPeptides_;
-    rGen = entrapmentDB.rGen;
+      rGen_ = entrapmentDB.rGen_;
   }
   return 0;
 }
@@ -370,7 +370,7 @@ Peptides::Peptides() : Peptides(4, {}, AminoAcidDist{false}, {}, 1000, false) {
 
 double Peptides::uniformDist(double a, double b) {
     auto dist = std::uniform_real_distribution(a,b);
-    return dist(rGen);
+    return dist(rGen_);
 }
 
 
