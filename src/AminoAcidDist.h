@@ -17,15 +17,37 @@
 
 #ifndef AMINOACIDDIST_H_
 #define AMINOACIDDIST_H_
+#include <map>
+#include <iostream>
+
+using namespace std;
 
 class AminoAcidDist
 {
 public:
-	AminoAcidDist();
-	virtual ~AminoAcidDist();
+	explicit AminoAcidDist(bool removeIl);
     char generateAA(double p);
+    static void normalize(map<char,double> &dist);
 protected:
-    map<char,double> dist;
+    map<char,double> dist_;
+public:
+    [[nodiscard]] const map<char, double> &getDist() const;
+
+public:
+    void setDist(map<char, double> dist, bool removeIL);
+    void print(std::ostream& os);
+};
+
+class AbsAminoAcidDist
+{
+public:
+    explicit AbsAminoAcidDist() = default;
+    void add(char AA);
+    inline static const string validAAs = "ACDEFGHIKLMNOPQRSTUVWY";
+protected:
+    map<char,int> dist_;
+public:
+    [[nodiscard]] map<char, double> getDist() const;
 };
 
 #endif /*AMINOACIDDIST_H_*/
