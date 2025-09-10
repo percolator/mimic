@@ -330,7 +330,7 @@ bool Peptides::parseOptions(int argc, char **argv){
                      TRUE_IF_SET);
     cmd.defineOption("N",
         "no-digest",
-        "Do not digest the sequence at lysines before scrambling",
+        "Do not digest the sequence before scrambling",
         "",
         TRUE_IF_SET);
 
