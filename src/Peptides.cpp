@@ -114,7 +114,7 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
   if (noDigest_) {
       if (protLen > 0) {
           addPeptide(seq.substr(0, protLen), pepNo++);
-          connectorStrings_.push_back(">");
+		  //connectorStrings_.push_back("");
       }
       return;
   }
