@@ -45,5 +45,6 @@ $ ./mimic <path_to_fasta_file>
 |replaceI          		|    I      | Count I as L for homolgy check														 |
 |empiric           		|    e      | Infer amino acid frequency from fasta for mutations									 |
 |no-digest         		|    N      | Do not digest the sequence before scrambling     										 |
+|retain-accession  		|    A      | Retains original accession (after prefix) in fasta header lines if set   				 |
 
 

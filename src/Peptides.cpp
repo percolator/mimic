@@ -151,6 +151,19 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
     if (write) os << line << std::endl;
 
     if (line[0] == '>') { // id line
+      string accession;
+      if (retainAccession_) {
+        // Extract accession from header, e.g. ">sp|P84243|H33_HUMAN ..."
+        size_t pipe1 = line.find('|');
+        if (pipe1 != string::npos) {
+          size_t pipe2 = line.find('|', pipe1 + 1);
+          if (pipe2 != string::npos) {
+              accession = line.substr(pipe1 + 1, pipe2 - pipe1 - 1);
+          }
+        }
+        accessions_.push_back(accession);
+      }
+
       if (spillOver) {
         assert(!seq.empty());
         // add peptides and KR-stretches to connectorStrings_
@@ -158,7 +171,12 @@ void Peptides::readFasta(string& path, bool write, std::ostream& os) {
         seq = "";
       }
       ostringstream newProteinName("");
-      newProteinName << ">" << proteinNamePrefix_ << ++proteinNo;
+      if (retainAccession_ && !accession.empty()) {
+        newProteinName << ">" << proteinNamePrefix_ << accession << "_" << (++proteinNo);
+      }
+      else {
+        newProteinName << ">" << proteinNamePrefix_ << (++proteinNo);
+      }
       connectorStrings_.push_back(newProteinName.str());
       assert(connectorStrings_.size() == pepNo+1);
     } else { // amino acid sequence
@@ -333,6 +351,11 @@ bool Peptides::parseOptions(int argc, char **argv){
         "Do not digest the sequence before scrambling",
         "",
         TRUE_IF_SET);
+    cmd.defineOption("A",
+        "retain-accession",
+        "Retain the original accession in the mimic output. \n Not set >mimic|Random_1|shuffle_1 \n If set >mimic|Random_P84243_1|shuffle_1",
+        "",
+        TRUE_IF_SET);
 
   cmd.parseArgs(argc, argv);
 
@@ -363,6 +386,9 @@ bool Peptides::parseOptions(int argc, char **argv){
   }
   if (cmd.optionSet("N")) {
       noDigest_ = true;
+  }  
+  if (cmd.optionSet("A")) {
+      retainAccession_ = true;
   }
 
   if (!cmd.arguments.empty()) {
