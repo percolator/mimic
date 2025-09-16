@@ -72,6 +72,7 @@ class Peptides
     bool inferAAFrequency_;
     AbsAminoAcidDist absBackground_;
     bool isVerbose_ = false;
+    bool noDigest_ = false;
 };
 
 #endif /*PEPTIDES_H_*/

@@ -111,6 +111,13 @@ void Peptides::cleaveProtein(string seq, unsigned int& pepNo) {
   if (protLen > 0 && seq[protLen-1]=='*') {
     --protLen;
   }
+  if (noDigest_) {
+      if (protLen > 0) {
+          addPeptide(seq.substr(0, protLen), pepNo++);
+		  //connectorStrings_.push_back("");
+      }
+      return;
+  }
   for (; pos<protLen; pos++) {
     if (pos == 0 || seq[pos] == 'K' || seq[pos] == 'R' || pos==protLen-1) {
       // store peptide without C-terminal 'K/R'
@@ -321,6 +328,11 @@ bool Peptides::parseOptions(int argc, char **argv){
                      "Instead of assuming the AA frequency infer it from the given fasta file",
                      "",
                      TRUE_IF_SET);
+    cmd.defineOption("N",
+        "no-digest",
+        "Do not digest the sequence before scrambling",
+        "",
+        TRUE_IF_SET);
 
   cmd.parseArgs(argc, argv);
 
@@ -348,6 +360,9 @@ bool Peptides::parseOptions(int argc, char **argv){
   }
   if (cmd.optionSet("e")) {
       inferAAFrequency_ = true;
+  }
+  if (cmd.optionSet("N")) {
+      noDigest_ = true;
   }
 
   if (!cmd.arguments.empty()) {

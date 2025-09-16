@@ -42,5 +42,8 @@ $ ./mimic <path_to_fasta_file>
 |seed                   |    S      | Set seed of the random number generator. Default = 1									 |
 |prepend                |    P      | Prepend the original fasta file to the output											 |
 |help              		|    h      | produce help message      															 |
+|replaceI          		|    I      | Count I as L for homolgy check														 |
+|empiric           		|    e      | Infer amino acid frequency from fasta for mutations									 |
+|no-digest         		|    N      | Do not digest the sequence before scrambling     										 |
 
 
