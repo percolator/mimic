@@ -53,6 +53,7 @@ class Peptides
     
     map<string,set<unsigned int> > pep2ixs_;
     vector<string> connectorStrings_;
+    vector<string> accessions_;
     set<string> usedPeptides_;
     
     // input arguments
@@ -73,6 +74,7 @@ class Peptides
     AbsAminoAcidDist absBackground_;
     bool isVerbose_ = false;
     bool noDigest_ = false;
+	bool retainAccession_ = false;
 };
 
 #endif /*PEPTIDES_H_*/
